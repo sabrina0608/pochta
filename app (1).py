@@ -2,37 +2,44 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# Sahifa sozlamalari
-st.set_page_config(page_title="Kurs ishi | Dashboard", layout="wide")
+# Sahifa sarlavhasi
+st.set_page_config(page_title="Kurs ishi", layout="wide")
 
-st.title("🚀 Ma'lumotlar Tahlili Veb-ilovasi")
-st.sidebar.header("Sozlamalar")
+st.title("📊 Ma'lumotlar Tahlili Dashboard")
 
-# Ma'lumotni yuklash funksiyasi
+# Faylni yuklash
 @st.cache_data
 def load_data():
-    return pd.read_csv('combined_data.csv')
+    try:
+        # Fayl nomi GitHub-dagidek aniq bo'lishi kerak
+        return pd.read_csv('combined_data.csv')
+    except Exception as e:
+        st.error(f"Faylni o'qishda xatolik: {e}")
+        return None
 
-try:
-    data = load_data()
-    
-    # Ma'lumotlar haqida qisqacha statistika
-    st.write("### Ma'lumotlar jadvali (dastlabki 10 ta qator)")
-    st.dataframe(data.head(10))
+df = load_data()
 
-    # Grafik yaratish bo'limi
-    st.write("### Vizual tahlil")
-    numeric_cols = data.select_dtypes(include=['float64', 'int64']).columns.tolist()
+if df is not None:
+    # 1. Ma'lumotlarni ko'rish
+    st.subheader("Ma'lumotlar jadvali")
+    st.dataframe(df.head(10))
+
+    # 2. Grafik chizish
+    st.subheader("Vizualizatsiya")
     
-    if numeric_cols:
-        x_axis = st.sidebar.selectbox("X o'qi uchun ustunni tanlang:", numeric_cols)
-        y_axis = st.sidebar.selectbox("Y o'qi uchun ustunni tanlang:", numeric_cols)
-        
-        fig = px.scatter(data, x=x_axis, y=y_axis, color_continuous_scale='Viridis',
-                         title=f"{x_axis} va {y_axis} o'rtasidagi bog'liqlik")
+    # Faqat raqamli ustunlarni tanlab olamiz
+    numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
+    
+    if len(numeric_cols) >= 2:
+        col1, col2 = st.columns(2)
+        with col1:
+            x_val = st.selectbox("X o'qini tanlang:", numeric_cols)
+        with col2:
+            y_val = st.selectbox("Y o'qini tanlang:", numeric_cols)
+            
+        fig = px.scatter(df, x=x_val, y=y_val, title=f"{x_val} va {y_val} bog'liqligi")
         st.plotly_chart(fig, use_container_width=True)
     else:
-        st.warning("Grafik chizish uchun raqamli ustunlar topilmadi.")
-
-except Exception as e:
-    st.error(f"Kutilmagan xatolik yuz berdi: {e}")
+        st.warning("Grafik chizish uchun yetarli raqamli ma'lumotlar topilmadi.")
+else:
+    st.info("Iltimos, 'combined_data.csv' fayli GitHub-da borligini tekshiring.")
