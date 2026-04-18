@@ -2,23 +2,23 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# 1. Sahifa sozlamalari
-st.set_page_config(page_title="Bashoratli Tahlil", layout="wide")
+# Sahifa sozlamalari
+st.set_page_config(page_title="Data Analysis Dashboard", layout="wide")
 
-# 2. Dizayn (CSS) - boyagi xato shu yerda edi, endi tuzatildi
+# Dizayn uchun CSS
 st.markdown("""
     <style>
-    .main { background-color: #f0f2f6; }
-    .stMetric { background-color: #ffffff; padding: 10px; border-radius: 10px; border: 1px solid #ddd; }
+    .main { background-color: #f8f9fa; }
+    .stMetric { border: 1px solid #4e73df; padding: 10px; border-radius: 5px; }
     </style>
     """, unsafe_allow_html=True)
 
-st.title("📊 Kurs ishi: Bashoratli Tahlil va Diagrammalar")
+st.title("📈 Kurs ishi: Ma'lumotlar Tahlili va Bashorat")
 
-# 3. Ma'lumotlarni yuklash
 @st.cache_data
 def load_data():
     try:
+        # Fayl nomi GitHub'da qanday bo'lsa shunday yoziladi
         return pd.read_csv('combined_data.csv')
     except:
         return None
@@ -26,34 +26,35 @@ def load_data():
 df = load_data()
 
 if df is not None:
-    # Metrikalar
-    c1, c2, c3 = st.columns(3)
-    c1.metric("Ma'lumotlar soni", len(df))
-    c2.metric("Ustunlar", len(df.columns))
-    c3.metric("Loyiha holati", "Tayyor")
+    # Metrikalar paneli
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Ma'lumotlar soni", len(df))
+    m2.metric("Xususiyatlar", len(df.columns))
+    m3.metric("Holati", "Tayyor")
+
+    st.divider()
 
     # Diagrammalar
-    st.subheader("📈 Vizual Tahlil va Diagrammalar")
-    
     numeric_cols = df.select_dtypes(include=['float64', 'int64']).columns.tolist()
-    
+
     if len(numeric_cols) >= 2:
-        tab1, tab2 = st.tabs(["Chiziqli diagramma", "Gistogramma"])
+        col1, col2 = st.columns(2)
         
-        with tab1:
-            x_ax = st.selectbox("X o'qi:", numeric_cols, key='x')
-            y_ax = st.selectbox("Y o'qi:", numeric_cols, key='y')
-            fig1 = px.line(df, x=x_ax, y=y_ax, title=f"{y_ax} ning o'zgarishi", template="plotly_dark")
-            st.plotly_chart(fig1, use_container_width=True)
-            
-        with tab2:
-            feat = st.selectbox("Taqsimot ustunini tanlang:", numeric_cols)
-            fig2 = px.histogram(df, x=feat, title=f"{feat} taqsimoti", color_discrete_sequence=['indianred'])
-            st.plotly_chart(fig2, use_container_width=True)
-    else:
-        st.warning("Diagramma uchun raqamli ustunlar yetarli emas.")
-        
-    st.write("### 📄 Ma'lumotlar jadvali")
-    st.dataframe(df.head(20))
+        with col1:
+            st.subheader("📊 Taqsimot Diagrammasi")
+            sel_col = st.selectbox("Ustunni tanlang:", numeric_cols)
+            fig_hist = px.histogram(df, x=sel_col, color_discrete_sequence=['#4e73df'])
+            st.plotly_chart(fig_hist, use_container_width=True)
+
+        with col2:
+            st.subheader("🔮 Bashoratli Bog'liqlik")
+            x_ax = st.selectbox("X o'qi:", numeric_cols, key='x_axis')
+            y_ax = st.selectbox("Y o'qi:", numeric_cols, key='y_axis')
+            # Trendline bashorat chizig'ini ko'rsatadi
+            fig_scat = px.scatter(df, x=x_ax, y=y_ax, trendline="ols")
+            st.plotly_chart(fig_scat, use_container_width=True)
+    
+    st.subheader("📋 Ma'lumotlar jadvali")
+    st.dataframe(df, use_container_width=True)
 else:
-    st.error("Xatolik: 'combined_data.csv' fayli topilmadi!")
+    st.error("Xatolik: 'combined_data.csv' fayli topilmadi. Fayl nomini GitHub'da tekshiring!")
